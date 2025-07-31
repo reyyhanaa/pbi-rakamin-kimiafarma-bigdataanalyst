@@ -1,0 +1,71 @@
+CREATE TABLE `bigquery-sandbox-467304.kimia_farma.tabel_analisa`` AS
+WITH transaksi_cte AS (
+  SELECT
+    t.transaction_id,
+    t.date,
+    t.customer_name,
+    t.rating AS rating_transaksi,
+    t.product_id,
+    t.branch_id,
+    t.discount_percentage,
+    t.price AS actual_price
+  FROM `bigquery-sandbox-467304.kimia_farma.kf_final_transaction` t
+),
+
+produk_cte AS (
+  SELECT
+    p.product_id,
+    p.product_name
+  FROM `bigquery-sandbox-467304.kimia_farma.kf_product` p
+),
+
+kantor_cabang_cte AS (
+  SELECT
+    k.branch_id,
+    k.branch_name,
+    k.kota,
+    k.provinsi,
+    k.rating AS rating_cabang
+  FROM `bigquery-sandbox-467304.kimia_farma.kf_kantor_cabang` k
+)
+
+SELECT 
+  tc.transaction_id,
+  tc.date,
+  tc.branch_id,
+  kc.branch_name,
+  kc.kota,
+  kc.provinsi,
+  kc.rating_cabang,
+  tc.customer_name,
+  pc.product_id,
+  pc.product_name,
+  tc.actual_price,
+  tc.discount_percentage,
+
+  -- menghitung nett_sales = harga setelah diskon
+  tc.actual_price * (1 - tc.discount_percentage / 100.0) AS nett_sales,
+
+  -- menghitung persentase gross laba = persentase laba yang seharusnya diterima dari obat
+  CASE
+    WHEN tc.actual_price <= 50000 THEN 0.10
+    WHEN tc.actual_price > 50000 AND tc.actual_price <= 100000 THEN 0.15
+    WHEN tc.actual_price > 100000 AND tc.actual_price <= 300000 THEN 0.20
+    WHEN tc.actual_price > 300000 AND tc.actual_price <= 500000 THEN 0.25
+    ELSE 0.30
+  END AS persentase_gross_laba,
+
+  -- menghitung nett_profit = keuntungan yang diperoleh kimia farma
+  (tc.actual_price * (1 - tc.discount_percentage / 100.0)) *
+  CASE
+    WHEN tc.actual_price <= 50000 THEN 0.10
+    WHEN tc.actual_price > 50000 AND tc.actual_price <= 100000 THEN 0.15
+    WHEN tc.actual_price > 100000 AND tc.actual_price <= 300000 THEN 0.20
+    WHEN tc.actual_price > 300000 AND tc.actual_price <= 500000 THEN 0.25
+    ELSE 0.30
+  END AS nett_profit,
+
+  tc.rating_transaksi
+FROM transaksi_cte tc
+JOIN produk_cte pc ON tc.product_id = pc.product_id
+JOIN kantor_cabang_cte kc ON tc.branch_id = kc.branch_id;
