@@ -8,4 +8,4 @@ Data Process:
   * persentase_gross_laba: Gross profit margin percentage based on price
   * nett_profit: Net profit per transaction
 
-This is the final dashboarding using Google Looker Studio: https://lookerstudio.google.com/s/lbcAbM6Xyzo 
+This is the final dashboarding using Google Looker Studio: https://lookerstudio.google.com/reporting/4b0ba289-c3a2-4390-aa91-ea65390ea4ab
